@@ -24,6 +24,17 @@ CONFS = {
     # 并发线程数
     'THREADS': 10,
     'REQUEST': {
+        # 资源URL
+        # type
+        # - text
+        # - photo
+        # - quote
+        # - link
+        # - chat
+        # - audio
+        # - video
+        # 'URL': 'http://%(site)s.tumblr.com/api/read?type=%(type)s&num=%(num)d&start=%(start)d',
+        'URL': 'http://{0}.tumblr.com/api/read?type={1}&num={2}&start={3}',
         # 设置请求超时时间
         'TIMEOUT': 10,
         # 尝试次数
@@ -441,6 +452,7 @@ class CrawlerScheduler(object):
 
     def _download_media(self, site, media_type, start):
         base_url = "http://{0}.tumblr.com/api/read?type={1}&num={2}&start={3}"
+        # base_url = CONFS['REQUEST']['URL']
         start = CONFS['REQUEST']['OFFSET']
         limit = CONFS['REQUEST']['LIMIT']
         total = 0
@@ -448,6 +460,12 @@ class CrawlerScheduler(object):
         while True:
             try:
                 media_url = base_url.format(site, media_type, limit, start)
+                # media_url = base_url % {
+                #     'site': site,
+                #     'media_type': media_type,
+                #     'start': start,
+                #     'num': limit
+                # }
                 self.log.info('[RequestGet]starting get %s' % media_url)
 
                 response = requests.get(
@@ -504,6 +522,14 @@ class CrawlerScheduler(object):
 # ------------------------------------------------------------------------------
 # Functions
 # ------------------------------------------------------------------------------
+
+def dict_merge(dict1, dict2):
+    for key, value in dict2.items():
+        if type(value).__name__ == 'dict':
+            dict_merge(dict1[key], dict2[key])
+        else:
+            dict1[key] = dict2[key]
+    pass
 
 """ Parse a JSON file
     First remove comments and then use the json module package
@@ -567,9 +593,16 @@ if __name__ == "__main__":
     conf_path = 'conf.json'
     if os.path.exists(conf_path):
         try:
+            default_confs = CONFS
             confs = parse_json(conf_path)
-            CONFS.update(confs)
-        except:
+            dict_merge(CONFS, confs)
+            # CONFS = {**CONFS, **confs}
+            # CONFS = {}
+            # CONFS.update(default_confs)
+            # CONFS.update(confs)
+            # CONFS = dict(CONFS.items() + confs.items())
+        except Exception as e:
+            print(e)
             illegal_json_conf(conf_path)
             sys.exit(1)
 
