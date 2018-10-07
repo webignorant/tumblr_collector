@@ -1,0 +1,15 @@
+{
+    "THREADS": 10,
+    "REQUEST": {
+        "TIMEOUT": 10,
+        "RETRY": 5,
+        "OFFSET": 0,
+        "LIMIT": 50,
+        "IS_DOWNLOAD_IMG": true,
+        "IS_DOWNLOAD_VIDEO": true,
+        "IS_DOWNLOAD_TEXT": true
+    },
+    "LOG": {
+        "FORCE_POSTS_LOG": false
+    }
+}
