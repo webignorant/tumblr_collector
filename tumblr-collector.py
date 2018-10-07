@@ -116,7 +116,10 @@ class Logger(logging.Manager):
                 }
                 break
             if case('post'):
-                logger_name = 'post_%s' % kwargs['site']
+                logger_name = '%(site)s_%(media_type)s_posts' % {
+                    'site': kwargs['site'],
+                    'media_type': kwargs['media_type']
+                }
                 log_filename = "blogs/%(site)s/%(site)s_%(media_type)s_posts.log" % {
                     'site': kwargs['site'],
                     'media_type': kwargs['media_type']
@@ -532,9 +535,8 @@ def parse_json(filename):
 
 def usage():
     print(u"未找到conf_sites.txt文件，请创建.\n"
-          u"请在文件中指定Tumblr站点名，并以逗号分割，不要有空格.\n"
+          u"请在文件中指定Tumblr站点名，每行一个.\n"
           u"保存文件并重试.\n\n"
-          u"例子: site1,site2\n\n"
           u"或者直接使用命令行参数指定站点\n"
           u"例子: python tumblr-photo-video-ripper.py site1,site2")
 
