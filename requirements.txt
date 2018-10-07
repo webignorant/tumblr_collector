@@ -1,4 +1,4 @@
 requests>=2.10.0
-six
+six>=1.11.0
 PySocks>=1.5.6
-beautifulsoup4
+beautifulsoup4>=4.6.3
