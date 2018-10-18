@@ -34,6 +34,8 @@ CONFS = {
         # - audio
         # - video
         # 'URL': 'http://%(site)s.tumblr.com/api/read?type=%(type)s&num=%(num)d&start=%(start)d',
+        # https://www.tumblr.com/svc/indash_blog?tumblelog_name_or_id=hephestos&post_id=&limit=10&offset=31&should_bypass_safemode=false&should_bypass_tagfiltering=false
+        # http://hephestos.tumblr.com/api/read?type=photo&num=50&start=0
         'URL': 'http://{0}.tumblr.com/api/read?type={1}&num={2}&start={3}',
         # 设置请求超时时间
         'TIMEOUT': 10,
@@ -259,21 +261,22 @@ class DownloadWorker(threading.Thread):
             if post.find('video-player'):
                 # 查找第一个
                 videoPlayerText = post.find('video-player').string
-                hd_pattern = re.compile(r'.*"hdUrl":("([^\s,]*)"|false),')
-                hd_match = hd_pattern.match(videoPlayerText)
-                try:
-                    if hd_match is not None and hd_match.group(1) != 'false':
-                        media_list.append(hd_match.group(2).replace('\\', ''))
-                except IndexError:
-                    pass
-                pattern = re.compile(r'.*src="(\S*)" ', re.DOTALL)
-                match = pattern.match(videoPlayerText)
-                if match is not None:
+                if videoPlayerText:
+                    hd_pattern = re.compile(r'.*"hdUrl":("([^\s,]*)"|false),')
+                    hd_match = hd_pattern.match(videoPlayerText)
                     try:
-                        media_list.append(match.group(1))
+                        if hd_match is not None and hd_match.group(1) != 'false':
+                            media_list.append(hd_match.group(2).replace('\\', ''))
                     except IndexError:
-                        # return None
                         pass
+                    pattern = re.compile(r'.*src="(\S*)" ', re.DOTALL)
+                    match = pattern.match(videoPlayerText)
+                    if match is not None:
+                        try:
+                            media_list.append(match.group(1))
+                        except IndexError:
+                            # return None
+                            pass
             pass
         elif media_type == "text":
             reg_remove_html_tag = re.compile("<[^>]*>")
@@ -515,7 +518,7 @@ class CrawlerScheduler(object):
                 start += CONFS['REQUEST']['LIMIT']
             except Exception as e:
                 self.log.error('[GetMediaFail] %s' % media_url)
-                print(e)
+                # print(e)
                 break
 
 
