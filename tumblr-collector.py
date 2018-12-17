@@ -50,7 +50,9 @@ CONFS = {
         # 是否下载视频
         'IS_DOWNLOAD_VIDEO': True,
         # 是否下载文本
-        'IS_DOWNLOAD_TEXT': True
+        'IS_DOWNLOAD_TEXT': True,
+        # 图片是否根据Slug划分子目录
+        'IS_PHOTO_SLUG_FOLDER': False,
     },
     'LOG': {
         # 日志目录
@@ -218,11 +220,16 @@ class DownloadWorker(threading.Thread):
 
     def download(self, site, media_type, post, download_folder):
         media_list = self._handle_media_list(media_type, post)
-        print('[PostSlug]%s' % post['slug'])
+        print('[%s-PostSlug]%s' % (site, post['slug']))
         print(media_list)
+
+        sub_folder = ""
+        if CONFS['REQUEST']['IS_PHOTO_SLUG_FOLDER'] and media_type == "photo" and post['slug']:
+            sub_folder = post['slug']
+
         if media_type == "photo" or media_type == "video":
             for media in media_list:
-                self._download(site, media_type, media, download_folder)
+                self._download(site, media_type, media, download_folder, sub_folder)
                 pass
         if media_type == "text":
             self._download_text(site, media_type, post, media_list, download_folder)
@@ -292,22 +299,22 @@ class DownloadWorker(threading.Thread):
                 #     pass
 
                 text = bodyObj.prettify()
-                try:
-                    parser = TumblrHtmlParser()
-                    parser.feed(text)
-                    parser.close()
-                    text = parser.text()
-                except:
-                    print('TumblrHtmlParser failed, try BeautifulSoup prettify')
-                    text = reg_remove_html_tag.sub('', text)
-                    text = reg_remove_empty_string.sub('', text)
-                    pass
+                # try:
+                #     parser = TumblrHtmlParser()
+                #     parser.feed(text)
+                #     parser.close()
+                #     text = parser.text()
+                # except:
+                #     print('TumblrHtmlParser failed, try BeautifulSoup prettify')
+                #     text = reg_remove_html_tag.sub('', text)
+                #     text = reg_remove_empty_string.sub('', text)
+                #     pass
 
                 if text:
                     media_list.append(text)
         return media_list
 
-    def _download(self, site, media_type, media_url, download_folder):
+    def _download(self, site, media_type, media_url, download_folder, sub_folder=""):
         logPost = self.logger.getLogger('post', site=site, media_type=media_type)
 
         # get MediaName
@@ -319,7 +326,15 @@ class DownloadWorker(threading.Thread):
                 media_name = "_".join([media_url.split("/")[-2], media_name])
             media_name += ".mp4"
 
+        if sub_folder:
+            download_folder = os.path.join(download_folder, sub_folder)
+            if not os.path.isdir(download_folder):
+                os.makedirs(download_folder)
+
         file_path = os.path.join(download_folder, media_name)
+
+        print(file_path)
+
         if not os.path.isfile(file_path):
             logPost.info(media_url)
 
@@ -518,7 +533,7 @@ class CrawlerScheduler(object):
                 start += CONFS['REQUEST']['LIMIT']
             except Exception as e:
                 self.log.error('[GetMediaFail] %s' % media_url)
-                # print(e)
+                print(e)
                 break
 
 
